@@ -6,6 +6,12 @@ export default function Workspace() {
   const [severity, setSeverity] = useState("low");
   const [medications, setMedications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // 👇 PRODUCTION BACKEND URL
+  const API_BASE =
+    process.env.REACT_APP_API_URL ||
+    "https://clarity-ai-98yp.onrender.com";
 
   const speakText = (text) => {
     if (!window.speechSynthesis) return;
@@ -23,9 +29,10 @@ export default function Workspace() {
     }
 
     setLoading(true);
+    setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/simplify", {
+      const response = await fetch(`${API_BASE}/api/simplify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -33,13 +40,17 @@ export default function Workspace() {
         body: JSON.stringify({ text: inputText }),
       });
 
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
+
       const data = await response.json();
 
       setSummary(data.summary);
       setSeverity(data.severity);
       setMedications(data.medications || []);
-    } catch (error) {
-      alert("Backend connection failed.");
+    } catch (err) {
+      setError("Backend connection failed. Please try again.");
     }
 
     setLoading(false);
@@ -47,9 +58,8 @@ export default function Workspace() {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>AI Medical Language Simplifier</h1>
+      <h1 style={styles.heading}>🧠 AI Medical Workspace</h1>
 
-      {/* INPUT CARD */}
       <div style={styles.glassCard}>
         <textarea
           placeholder="Paste discharge summary, prescription, or medical report..."
@@ -61,9 +71,10 @@ export default function Workspace() {
         <button style={styles.primaryBtn} onClick={simplifyDocument}>
           {loading ? "Processing..." : "Simplify Document"}
         </button>
+
+        {error && <div style={styles.error}>{error}</div>}
       </div>
 
-      {/* RESULT CARD */}
       {summary && (
         <div style={styles.glassCard}>
           <h2>Patient-Friendly Explanation</h2>
@@ -107,11 +118,9 @@ const styles = {
   container: {
     position: "relative",
   },
-
   heading: {
     marginBottom: "25px",
   },
-
   glassCard: {
     background: "rgba(255,255,255,0.05)",
     backdropFilter: "blur(15px)",
@@ -120,7 +129,6 @@ const styles = {
     marginBottom: "30px",
     border: "1px solid rgba(255,255,255,0.1)",
   },
-
   textarea: {
     width: "100%",
     height: "130px",
@@ -131,7 +139,6 @@ const styles = {
     background: "rgba(255,255,255,0.1)",
     color: "white",
   },
-
   primaryBtn: {
     background: "#6366f1",
     color: "white",
@@ -140,7 +147,6 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
   },
-
   alert: {
     background: "rgba(255, 193, 7, 0.15)",
     padding: "10px",
@@ -148,11 +154,13 @@ const styles = {
     marginBottom: "15px",
     color: "#ffc107",
   },
-
+  error: {
+    marginTop: "15px",
+    color: "#ff6b6b",
+  },
   summary: {
     lineHeight: "1.6",
   },
-
   medCard: {
     background: "rgba(255,255,255,0.05)",
     padding: "15px",
