@@ -1,0 +1,4 @@
+node_modules/
+docdecode-backend/node_modules/
+.env
+build/
